@@ -5,13 +5,20 @@ defmodule EctoRanked.Mixfile do
     [app: :ecto_ranked,
      version: "0.1.0",
      elixir: "~> 1.4",
-     description: "Add and maintain rankings to sort your data with Ecto",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      package: package(),
      deps: deps()]
   end
 
+  defp package do
+    [description: "Add and maintain rankings to sort your data with Ecto",
+     files: ["lib", "mix.exs", "README*"],
+     maintainers: ["Dylan Markow"],
+     licenses: ["MIT"],
+     links: %{github: "https://github.com/dmarkow/ecto_ranked"}
+    ]
+  end
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
@@ -31,6 +38,6 @@ defmodule EctoRanked.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:ecto, "~> 2.0"},
-     {:ex_doc, "~> 0.14", only: :dev}]
+     {:ex_doc, "~> 0.14", only: :dev, runtime: false}]
   end
 end

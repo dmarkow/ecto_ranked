@@ -1,32 +1,41 @@
 defmodule EctoRanked do
   @moduledoc """
-  EctoRanked Documentation for EctoRanked.
-  """
+  EctoRanked uses a rank column to  provides changeset methods for updating ordering an ordering column
 
-  @doc """
-  Hello world.
+  Sample usage:
+  ```
+  defmodule MyApp.Item do
+    use MyApp.Web, :model
 
-  ## Examples
+    schema "items" do
+      field :rank, :integer
+      field :position, :any, virtual: true
+      belongs_to :parent, MyApp.Parent
+    end
 
-      iex> EctoRanked.hello
-      :world
-
-  """
-  def hello do
-    :world
+    def changeset(struct, params \\ %{}) do
+      struct
+      |> cast(params, [:position])
+      |> set_rank(:parent_id)
+    end
   end
-
+  ```
+  """
   import Ecto.Changeset
   import Ecto.Query
 
   @min -2147483648
   @max 2147483647
 
+  @doc """
+  Updates the given changeset with the appropriate ranking, and updates/ranks
+  the other items in the list as necessary.
+  """
   def set_rank(changeset, scope_field) do
      prepare_changes(changeset, fn changeset ->
       case changeset.action do
-        :insert -> Api.Rankable.before_insert changeset, scope_field
-        :update -> Api.Rankable.before_update changeset, scope_field
+        :insert -> EctoRanked.before_insert changeset, scope_field
+        :update -> EctoRanked.before_update changeset, scope_field
       end
     end)
   end
@@ -39,7 +48,7 @@ defmodule EctoRanked do
 
     last = get_current_last(cs, options)
     rank = if last do
-      Api.Math.ceiling((@max - last) / 2) + last
+      EctoRanked.Utils.ceiling((@max - last) / 2) + last
     else
       0
     end
@@ -59,7 +68,7 @@ defmodule EctoRanked do
     end
   end
 
-  def update_rank(cs, options, position) do
+  defp update_rank(cs, options, position) do
     {min, max} = find_neighbors(cs, options, position)
     rank_at(cs, min, max)
     |> assure_unique_position(options)
@@ -68,7 +77,7 @@ defmodule EctoRanked do
     # assure unique positions
   end
 
-  def assure_unique_position(cs, options) do
+  defp assure_unique_position(cs, options) do
     rank = get_change(cs, :rank)
     if rank && (rank > @max || current_at_rank(cs, options)) do
       rearrange_ranks(cs, options)
@@ -77,7 +86,7 @@ defmodule EctoRanked do
     end
   end
 
-  def current_at_rank(cs, options) do
+  defp current_at_rank(cs, options) do
     rank = get_field(cs, :rank)
     scope = get_field(cs, options.scope_field)
     options.module
@@ -88,7 +97,7 @@ defmodule EctoRanked do
     |> cs.repo.one
   end
 
-  def exclude_existing(query, cs) do
+  defp exclude_existing(query, cs) do
     if cs.data.id do
       query |> where([m], m.id != ^cs.data.id)
     else
@@ -96,11 +105,11 @@ defmodule EctoRanked do
     end
   end
 
-  def rearrange_ranks(cs, options) do
+  defp rearrange_ranks(cs, options) do
     rank = get_field(cs, :rank)
     scope = get_field(cs, options.scope_field)
-    current_first = get_current_first(cs, options, true)
-    current_last = get_current_last(cs, options, true)
+    current_first = get_current_first(cs, options)
+    current_last = get_current_last(cs, options)
     cond do
       current_first && current_first > @min && rank == @max ->#decrement lteq rank
         options.module
@@ -131,7 +140,7 @@ defmodule EctoRanked do
     # end
   end
 
-  def rebalance_ranks(cs, options) do
+  defp rebalance_ranks(cs, options) do
     scope = get_field(cs, options.scope_field)
     items = options.module |> order_by(asc: :rank) |> exclude_existing(cs) |> where([m], field(m, ^options.scope_field) == ^scope)|> cs.repo.all
     rank = get_field(cs, :rank)
@@ -139,11 +148,11 @@ defmodule EctoRanked do
     rank_row(cs, options, items, 1, rank)
   end
 
-  def rank_row(cs, options, items, index, rank, set_self \\ false) do
+  defp rank_row(cs, options, items, index, rank, set_self \\ false) do
     if index > length(items) + 1 do
       cs
     else
-      rank_value = Api.Math.ceiling(((@max - @min) / (length(items) + 2)) * index) + @min
+      rank_value = EctoRanked.Utils.ceiling(((@max - @min) / (length(items) + 2)) * index) + @min
       current_index = index - 1
       item = Enum.at(items, current_index)
       if !set_self && (!item || (item.rank && item.rank >= rank)) do
@@ -161,14 +170,13 @@ defmodule EctoRanked do
     end
   end
 
-  def rank_at(cs, min, max) do
-    ranking = Api.Math.ceiling((max - min) / 2) + min
+  defp rank_at(cs, min, max) do
+    ranking = EctoRanked.Utils.ceiling((max - min) / 2) + min
     put_change(cs, :rank, ranking)
   end
 
-  def find_neighbors(cs, options, 0) do
-    scope = get_field(cs, options.scope_field)
-    first = get_current_first(cs, options, true)
+  defp find_neighbors(cs, options, 0) do
+    first = get_current_first(cs, options)
 
     case first do
       nil -> {@min, @max}
@@ -176,7 +184,7 @@ defmodule EctoRanked do
     end
   end
 
-  def find_neighbors(cs, options, position) do
+  defp find_neighbors(cs, options, position) do
     scope = get_field(cs, options.scope_field)
     results = options.module
     |> where([m], field(m, ^options.scope_field) == ^scope)
@@ -188,13 +196,13 @@ defmodule EctoRanked do
     |> cs.repo.all
 
     case results do
-      [] -> {get_current_last(cs, options, true), @max}
+      [] -> {get_current_last(cs, options), @max}
       [lower] -> {lower, @max}
       [lower, upper] -> {lower, upper}
     end
   end
 
-  defp get_current_first(cs, options, exclude_existing \\ false) do
+  defp get_current_first(cs, options) do
     scope = get_field(cs, options.scope_field)
     first = options.module
     |> where([m], field(m, ^options.scope_field) == ^scope)
@@ -202,7 +210,7 @@ defmodule EctoRanked do
     |> limit(1)
     |> select([m], m.rank)
 
-    first = if exclude_existing do
+    first = if cs.data.id do
       first |> exclude_existing(cs)
     else
       first
@@ -211,7 +219,7 @@ defmodule EctoRanked do
     first |> cs.repo.one
   end
 
-  defp get_current_last(cs, options, exclude_existing \\ false) do
+  defp get_current_last(cs, options) do
     scope = get_field(cs, options.scope_field)
     last = options.module
     |> where([m], field(m, ^options.scope_field) == ^scope)
@@ -219,7 +227,7 @@ defmodule EctoRanked do
     |> limit(1)
     |> select([m], m.rank)
 
-    last = if exclude_existing do
+    last = if cs.data.id do
       last |> exclude_existing(cs)
     else
       last
