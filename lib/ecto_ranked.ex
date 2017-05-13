@@ -1,25 +1,6 @@
 defmodule EctoRanked do
   @moduledoc """
   EctoRanked uses a rank column to  provides changeset methods for updating ordering an ordering column
-
-  Sample usage:
-  ```
-  defmodule MyApp.Item do
-    use MyApp.Web, :model
-
-    schema "items" do
-      field :rank, :integer
-      field :position, :any, virtual: true
-      belongs_to :parent, MyApp.Parent
-    end
-
-    def changeset(struct, params \\ %{}) do
-      struct
-      |> cast(params, [:position])
-      |> set_rank(:parent_id)
-    end
-  end
-  ```
   """
   import Ecto.Changeset
   import Ecto.Query
