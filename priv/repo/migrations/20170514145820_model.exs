@@ -1,4 +1,4 @@
-defmodule EctoRankedTest.Repo.Migrations.Model do
+defmodule EctoRanked.Test.Repo.Migrations.Model do
   use Ecto.Migration
 
   def change do

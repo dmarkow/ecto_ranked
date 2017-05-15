@@ -1,7 +1,7 @@
-defmodule EctoRankedTest do
+defmodule EctoRanked.RankedTest do
   use EctoRanked.TestCase
   import Ecto.Query
-  alias EctoRankedTest.{Model, Repo}
+  alias EctoRanked.Test.{Model, Repo}
   doctest EctoRanked
 
   @min -2147483648
@@ -53,6 +53,12 @@ defmodule EctoRankedTest do
       model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
       model4 = %Model{} |> Model.changeset(%{position: 0}) |> Repo.insert!
       assert ranked_ids() == [model4.id, model1.id, model2.id, model3.id]
+    end
+
+    test "inserting at an invalid position" do
+      assert_raise ArgumentError, "invalid position", fn ->
+        Model.changeset(%Model{}, %{position: "wrong"}) |> Repo.insert!
+      end
     end
   end
 

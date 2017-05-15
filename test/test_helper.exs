@@ -4,10 +4,10 @@ defmodule EctoRanked.TestCase do
   use ExUnit.CaseTemplate
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(EctoRankedTest.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(EctoRankedTest.Repo, {:shared, self()})
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(EctoRanked.Test.Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(EctoRanked.Test.Repo, {:shared, self()})
   end
 end
 
-{:ok, _pid} = EctoRankedTest.Repo.start_link
-Ecto.Adapters.SQL.Sandbox.mode(EctoRankedTest.Repo, {:shared, self()})
+{:ok, _pid} = EctoRanked.Test.Repo.start_link
+Ecto.Adapters.SQL.Sandbox.mode(EctoRanked.Test.Repo, {:shared, self()})

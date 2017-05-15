@@ -50,14 +50,17 @@ defmodule EctoRanked do
         rank_between(cs, @min, first || @max)
       "last" ->
         last = get_current_last(cs, options)
-        if get_field(cs, :title) == "2_33" do
-          IO.inspect {"ranking between", last, @max}
-        end
         rank_between(cs, last || @min, @max)
       number when is_integer(number) ->
         {min, max} = find_neighbors(cs, options, number)
         rank_between(cs, min, max)
-      _ -> if get_field(cs, :rank), do: cs, else: update_index_from_position(cs, options, "last")
+      nil ->
+        if get_field(cs, :rank) && (!options.scope_field || !get_change(cs, options.scope_field)) do
+          cs
+        else
+          update_index_from_position(cs, options, "last")
+        end
+      _ -> raise ArgumentError, "invalid position"
     end
   end
 

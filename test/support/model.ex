@@ -1,4 +1,4 @@
-defmodule EctoRankedTest.Model do
+defmodule EctoRanked.Test.Model do
   use Ecto.Schema
   import Ecto.Changeset
   import EctoRanked
