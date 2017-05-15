@@ -27,14 +27,9 @@ defmodule EctoRanked do
       scope_field: scope_field
     }
 
-    last = get_current_last(cs, options)
-    rank = if last do
-      EctoRanked.Utils.ceiling((@max - last) / 2) + last
-    else
-      0
-    end
-
-    cs |> put_change(:rank, rank) |> assure_unique_position(options)
+    cs
+    |> update_index_from_position(options, get_change(cs, :position))
+    |> assure_unique_position(options)
   end
 
   def before_update(cs, scope_field) do
@@ -43,19 +38,37 @@ defmodule EctoRanked do
       scope_field: scope_field
     }
 
-    case fetch_change(cs, :position) do
-      {:ok, position} -> cs |> update_rank(options, position)
-      nil -> cs
+    cs
+    |> update_index_from_position(options, get_change(cs, :position))
+    |> assure_unique_position(options)
+  end
+
+  defp update_index_from_position(cs, options, position) do
+    case position do
+      "first" ->
+        first = get_current_first(cs, options)
+        rank_between(cs, @min, first || @max)
+      "last" ->
+        last = get_current_last(cs, options)
+        if get_field(cs, :title) == "2_33" do
+          IO.inspect {"ranking between", last, @max}
+        end
+        rank_between(cs, last || @min, @max)
+      number when is_integer(number) ->
+        {min, max} = find_neighbors(cs, options, number)
+        rank_between(cs, min, max)
+      _ -> if get_field(cs, :rank), do: cs, else: update_index_from_position(cs, options, "last")
     end
   end
 
-  defp update_rank(cs, options, position) do
-    {min, max} = find_neighbors(cs, options, position)
-    rank_at(cs, min, max)
-    |> assure_unique_position(options)
-    # min, max = find neighbors
-    # rank_at(min, max)
-    # assure unique positions
+  defp rank_between(cs, min, max) do
+    rank = EctoRanked.Utils.ceiling((max - min) / 2) + min
+    rank_at(cs, rank)
+  end
+
+  defp rank_at(cs, rank) do
+    # IO.inspect {"setting rank", rank}
+    put_change(cs, :rank, rank)
   end
 
   defp assure_unique_position(cs, options) do
@@ -70,20 +83,10 @@ defmodule EctoRanked do
   defp current_at_rank(cs, options) do
     rank = get_field(cs, :rank)
     scope = get_field(cs, options.scope_field)
-    options.module
-    |> where([m], field(m, ^options.scope_field) == ^scope)
-    |> exclude_existing(cs)
+    finder(cs, options)
     |> where(rank: ^rank)
     |> limit(1)
     |> cs.repo.one
-  end
-
-  defp exclude_existing(query, cs) do
-    if cs.data.id do
-      query |> where([m], m.id != ^cs.data.id)
-    else
-      query
-    end
   end
 
   defp rearrange_ranks(cs, options) do
@@ -93,23 +96,17 @@ defmodule EctoRanked do
     current_last = get_current_last(cs, options)
     cond do
       current_first && current_first > @min && rank == @max ->#decrement lteq rank
-        options.module
-        |> where([m], field(m, ^options.scope_field) == ^scope)
-        |> exclude_existing(cs)
+        finder(cs, options)
         |> where([m], m.rank <= ^rank)
         |> cs.repo.update_all([inc: [rank: -1]])
         cs
       current_last && current_last < @max - 1 && rank < current_last -> #increment gteq rank
-        options.module
-        |> where([m], field(m, ^options.scope_field) == ^scope)
-        |> exclude_existing(cs)
+        finder(cs, options)
         |> where([m], m.rank >= ^rank)
         |> cs.repo.update_all([inc: [rank: 1]])
         cs
       current_first && current_first > @min && rank > current_first -> #decrement ltrank
-        options.module
-        |> where([m], field(m, ^options.scope_field) == ^scope)
-        |> exclude_existing(cs)
+        finder(cs, options)
         |> where([m], m.rank < ^rank)
         |> cs.repo.update_all([inc: [rank: -1]])
         put_change(cs, :rank, rank - 1)
@@ -123,9 +120,10 @@ defmodule EctoRanked do
 
   defp rebalance_ranks(cs, options) do
     scope = get_field(cs, options.scope_field)
-    items = options.module |> order_by(asc: :rank) |> exclude_existing(cs) |> where([m], field(m, ^options.scope_field) == ^scope)|> cs.repo.all
+    items = finder(cs, options)
+            |> order_by(asc: :rank)
+            |> cs.repo.all
     rank = get_field(cs, :rank)
-    Enum.each(items, fn item -> IO.inspect {"item", item.title} end)
     rank_row(cs, options, items, 1, rank)
   end
 
@@ -136,45 +134,26 @@ defmodule EctoRanked do
       rank_value = EctoRanked.Utils.ceiling(((@max - @min) / (length(items) + 2)) * index) + @min
       current_index = index - 1
       item = Enum.at(items, current_index)
-      if !set_self && (!item || (item.rank && item.rank >= rank)) do
-        IO.puts "RANKING US AT #{rank_value} (#{current_index})"
-        IO.inspect {get_field(cs, :title), rank_value}
+
+      if !set_self && (!item || (item.rank && item.rank < @max  && item.rank >= rank)) do
         cs = cs |> put_change(:rank, rank_value)
         rank_row(cs, options, items, index + 1, rank_value, true)
       else
         current_index = if set_self, do: current_index - 1, else: current_index
         item = Enum.at(items, current_index)
-        IO.inspect {item.title, rank_value}
         change(item, %{rank: rank_value}) |> cs.repo.update!
         rank_row(cs, options, items, index + 1, rank, set_self)
       end
     end
   end
 
-  defp rank_at(cs, min, max) do
-    ranking = EctoRanked.Utils.ceiling((max - min) / 2) + min
-    put_change(cs, :rank, ranking)
-  end
-
-  defp find_neighbors(cs, options, 0) do
-    first = get_current_first(cs, options)
-
-    case first do
-      nil -> {@min, @max}
-      first -> {@min, first}
-    end
-  end
-
-  defp find_neighbors(cs, options, position) do
-    scope = get_field(cs, options.scope_field)
-    results = options.module
-    |> where([m], field(m, ^options.scope_field) == ^scope)
-    |> order_by(asc: :rank)
-    |> limit(2)
-    |> offset(^(position - 1))
-    |> select([m], m.rank)
-    |> exclude_existing(cs)
-    |> cs.repo.all
+  defp find_neighbors(cs, options, position) when position > 0 do
+    results = finder(cs, options)
+              |> order_by(asc: :rank)
+              |> limit(2)
+              |> offset(^(position - 1))
+              |> select([m], m.rank)
+              |> cs.repo.all
 
     case results do
       [] -> {get_current_last(cs, options), @max}
@@ -183,37 +162,51 @@ defmodule EctoRanked do
     end
   end
 
-  defp get_current_first(cs, options) do
-    scope = get_field(cs, options.scope_field)
-    first = options.module
-    |> where([m], field(m, ^options.scope_field) == ^scope)
-    |> order_by(asc: :rank)
-    |> limit(1)
-    |> select([m], m.rank)
+  defp find_neighbors(cs, options, _) do
+    first = get_current_first(cs, options)
 
-    first = if cs.data.id do
-      first |> exclude_existing(cs)
-    else
-      first
+    case first do
+      nil -> {@min, @max}
+      first -> {@min, first}
     end
+  end
 
-    first |> cs.repo.one
+  defp find_neighbors
+
+  defp get_current_first(cs, options) do
+    first = finder(cs, options)
+            |> order_by(asc: :rank)
+            |> limit(1)
+            |> select([m], m.rank)
+            |> cs.repo.one
   end
 
   defp get_current_last(cs, options) do
-    scope = get_field(cs, options.scope_field)
-    last = options.module
-    |> where([m], field(m, ^options.scope_field) == ^scope)
-    |> order_by(desc: :rank)
-    |> limit(1)
-    |> select([m], m.rank)
+    last = finder(cs, options)
+           |> order_by(desc: :rank)
+           |> limit(1)
+           |> select([m], m.rank)
+           |> cs.repo.one
+  end
 
-    last = if cs.data.id do
-      last |> exclude_existing(cs)
+  defp finder(cs, options) do
+    query = options.module
+
+    query = if options.scope_field do
+      scope = get_field(cs, options.scope_field)
+      if scope do
+        query |> where([q], field(q, ^options.scope_field) == ^scope)
+      else
+        query |> where([q], is_nil(field(q, ^options.scope_field)))
+      end
     else
-      last
+      query
     end
 
-    last |> cs.repo.one
+    if cs.data.id do
+      query |> where([m], m.id != ^cs.data.id)
+    else
+      query
+    end
   end
 end

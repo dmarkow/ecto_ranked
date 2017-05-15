@@ -7,6 +7,8 @@ defmodule EctoRanked.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     elixirc_paths: elixirc_paths(Mix.env),
+     aliases: aliases(),
      package: package(),
      deps: deps()]
   end
@@ -27,6 +29,13 @@ defmodule EctoRanked.Mixfile do
     [extra_applications: [:logger]]
   end
 
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
+  defp aliases do
+    ["test": ["ecto.create --quiet", "ecto.migrate", "test"]]
+  end
+
   # Dependencies can be Hex packages:
   #
   #   {:my_dep, "~> 0.3.0"}
@@ -38,6 +47,7 @@ defmodule EctoRanked.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:ecto, "~> 2.0"},
+     {:postgrex, "~> 0.13.2", only: :test},
      {:ex_doc, "~> 0.14", only: :dev, runtime: false}]
   end
 end
