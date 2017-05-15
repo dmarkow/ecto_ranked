@@ -17,6 +17,7 @@ defmodule EctoRanked do
   * `:position` - the field to use for positional changes. Defaults to `:position`
   * `:scope` - the field to scope all ranking to. Defaults to `nil` (no scoping).
   """
+  @spec set_rank(Ecto.Changeset.t, Keyword.t) :: Ecto.Changeset.t
   def set_rank(changeset, opts) do
      prepare_changes(changeset, fn cs ->
       if cs.action in [:insert, :update] do
