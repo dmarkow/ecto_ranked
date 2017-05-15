@@ -4,7 +4,7 @@ defmodule EctoRanked.Test.Repo.Migrations.Model do
   def change do
     create table(:models) do
       add :title, :string
-      add :rank, :integer
+      add :my_rank, :integer
       add :scope, :integer
     end
   end

@@ -12,60 +12,46 @@ defmodule EctoRanked do
   Updates the given changeset with the appropriate ranking, and updates/ranks
   the other items in the list as necessary.
   """
-  def set_rank(changeset, scope_field) do
-     prepare_changes(changeset, fn changeset ->
-      case changeset.action do
-        :insert -> EctoRanked.before_insert changeset, scope_field
-        :update -> EctoRanked.before_update changeset, scope_field
+  def set_rank(changeset, opts) do
+     prepare_changes(changeset, fn cs ->
+      if cs.action in [:insert, :update] do
+        options = %{
+          module: cs.data.__struct__,
+          scope_field: Keyword.get(opts, :scope),
+          position_field: Keyword.get(opts, :position, :position),
+          rank_field: Keyword.get(opts, :rank, :rank)
+        }
+
+        cs
+        |> update_index_from_position(options, get_change(cs, options.position_field))
+        |> assure_unique_position(options)
       end
     end)
-  end
-
-  def before_insert(cs, scope_field) do
-    options = %{
-      module: cs.data.__struct__,
-      scope_field: scope_field
-    }
-
-    cs
-    |> update_index_from_position(options, get_change(cs, :position))
-    |> assure_unique_position(options)
-  end
-
-  def before_update(cs, scope_field) do
-    options = %{
-      module: cs.data.__struct__,
-      scope_field: scope_field
-    }
-
-    cs
-    |> update_index_from_position(options, get_change(cs, :position))
-    |> assure_unique_position(options)
   end
 
   defp update_index_from_position(cs, options, position) do
     case position do
       "first" ->
         first = get_current_first(cs, options)
-        rank_between(cs, @min, first || @max)
+        rank_between(cs, options, @min, first || @max)
       "last" ->
         last = get_current_last(cs, options)
-        rank_between(cs, last || @min, @max)
+        rank_between(cs, options, last || @min, @max)
       "up" ->
         case find_prev_two(cs, options) do
           nil -> cs
-          {min, max} -> rank_between(cs, min, max)
+          {min, max} -> rank_between(cs, options, min, max)
         end
       "down" ->
         case find_next_two(cs, options) do
           nil -> cs
-          {min, max} -> rank_between(cs, min, max)
+          {min, max} -> rank_between(cs, options, min, max)
         end
       number when is_integer(number) ->
         {min, max} = find_neighbors(cs, options, number)
-        rank_between(cs, min, max)
+        rank_between(cs, options, min, max)
       nil ->
-        if get_field(cs, :rank) && (!options.scope_field || !get_change(cs, options.scope_field)) do
+        if get_field(cs, options.rank_field) && (!options.scope_field || !get_change(cs, options.scope_field)) do
           cs
         else
           update_index_from_position(cs, options, "last")
@@ -74,18 +60,17 @@ defmodule EctoRanked do
     end
   end
 
-  defp rank_between(cs, min, max) do
+  defp rank_between(cs, options, min, max) do
     rank = EctoRanked.Utils.ceiling((max - min) / 2) + min
-    rank_at(cs, rank)
+    rank_at(cs, options, rank)
   end
 
-  defp rank_at(cs, rank) do
-    # IO.inspect {"setting rank", rank}
-    put_change(cs, :rank, rank)
+  defp rank_at(cs, options, rank) do
+    put_change(cs, options.rank_field, rank)
   end
 
   defp assure_unique_position(cs, options) do
-    rank = get_change(cs, :rank)
+    rank = get_change(cs, options.rank_field)
     if rank && (rank > @max || current_at_rank(cs, options)) do
       rearrange_ranks(cs, options)
     else
@@ -94,49 +79,42 @@ defmodule EctoRanked do
   end
 
   defp current_at_rank(cs, options) do
-    rank = get_field(cs, :rank)
-    scope = get_field(cs, options.scope_field)
+    rank = get_field(cs, options.rank_field)
     finder(cs, options)
-    |> where(rank: ^rank)
+    |> where([f], field(f, ^options.rank_field) == ^rank)
     |> limit(1)
     |> cs.repo.one
   end
 
   defp rearrange_ranks(cs, options) do
-    rank = get_field(cs, :rank)
-    scope = get_field(cs, options.scope_field)
+    rank = get_field(cs, options.rank_field)
     current_first = get_current_first(cs, options)
     current_last = get_current_last(cs, options)
     cond do
       current_first && current_first > @min && rank == @max ->#decrement lteq rank
         finder(cs, options)
-        |> where([m], m.rank <= ^rank)
-        |> cs.repo.update_all([inc: [rank: -1]])
+        |> where([m], field(m, ^options.rank_field) <= ^rank)
+        |> cs.repo.update_all([inc: [{options.rank_field, -1}]])
         cs
       current_last && current_last < @max - 1 && rank < current_last -> #increment gteq rank
         finder(cs, options)
-        |> where([m], m.rank >= ^rank)
-        |> cs.repo.update_all([inc: [rank: 1]])
+        |> where([m], field(m, ^options.rank_field) >= ^rank)
+        |> cs.repo.update_all([inc: [{options.rank_field, 1}]])
         cs
       current_first && current_first > @min && rank > current_first -> #decrement ltrank
         finder(cs, options)
-        |> where([m], m.rank < ^rank)
-        |> cs.repo.update_all([inc: [rank: -1]])
-        put_change(cs, :rank, rank - 1)
+        |> where([m], field(m, ^options.rank_field) < ^rank)
+        |> cs.repo.update_all([inc: [{options.rank_field, -1}]])
+        put_change(cs, options.rank_field, rank - 1)
       true -> rebalance_ranks(cs, options)
     end
-    #   current_first > @min && rank == @max -> decrement_other_ranks(options, cs)
-    #   current_last < @max - 1 && current_rank < current_last -> increment_other_ranks(options, cs)
-    #   true -> rebalance_ranks(options, cs)
-    # end
   end
 
   defp rebalance_ranks(cs, options) do
-    scope = get_field(cs, options.scope_field)
     items = finder(cs, options)
-            |> order_by(asc: :rank)
+            |> order_by(asc: ^options.rank_field)
             |> cs.repo.all
-    rank = get_field(cs, :rank)
+    rank = get_field(cs, options.rank_field)
     rank_row(cs, options, items, 1, rank)
   end
 
@@ -148,13 +126,14 @@ defmodule EctoRanked do
       current_index = index - 1
       item = Enum.at(items, current_index)
 
-      if !set_self && (!item || (item.rank && item.rank < @max  && item.rank >= rank)) do
-        cs = cs |> put_change(:rank, rank_value)
+      current_rank = item && Map.get(item, options.rank_field)
+      if !set_self && (!item || (current_rank && current_rank < @max && current_rank >= rank)) do
+        cs = cs |> put_change(options.rank_field, rank_value)
         rank_row(cs, options, items, index + 1, rank_value, true)
       else
         current_index = if set_self, do: current_index - 1, else: current_index
         item = Enum.at(items, current_index)
-        change(item, %{rank: rank_value}) |> cs.repo.update!
+        change(item, [{options.rank_field, rank_value}]) |> cs.repo.update!
         rank_row(cs, options, items, index + 1, rank, set_self)
       end
     end
@@ -162,10 +141,10 @@ defmodule EctoRanked do
 
   defp find_neighbors(cs, options, position) when position > 0 do
     results = finder(cs, options)
-              |> order_by(asc: :rank)
+              |> order_by(asc: ^options.rank_field)
               |> limit(2)
               |> offset(^(position - 1))
-              |> select([m], m.rank)
+              |> select([m], field(m, ^options.rank_field))
               |> cs.repo.all
 
     case results do
@@ -184,31 +163,29 @@ defmodule EctoRanked do
     end
   end
 
-  defp find_neighbors
-
   defp get_current_first(cs, options) do
-    first = finder(cs, options)
-            |> order_by(asc: :rank)
-            |> limit(1)
-            |> select([m], m.rank)
-            |> cs.repo.one
+    finder(cs, options)
+    |> order_by(asc: ^options.rank_field)
+    |> limit(1)
+    |> select([m], field(m, ^options.rank_field))
+    |> cs.repo.one
   end
 
   defp get_current_last(cs, options) do
-    last = finder(cs, options)
-           |> order_by(desc: :rank)
-           |> limit(1)
-           |> select([m], m.rank)
-           |> cs.repo.one
+    finder(cs, options)
+    |> order_by(desc: ^options.rank_field)
+    |> limit(1)
+    |> select([m], field(m, ^options.rank_field))
+    |> cs.repo.one
   end
 
   defp find_prev_two(cs, options) do
-    rank = get_field(cs, :rank)
+    rank = get_field(cs, options.rank_field)
     results = finder(cs, options)
-              |> where([f], f.rank < ^rank)
-              |> order_by(desc: :rank)
+              |> where([f], field(f, ^options.rank_field) < ^rank)
+              |> order_by(desc: ^options.rank_field)
               |> limit(2)
-              |> select([f], f.rank)
+              |> select([f], field(f, ^options.rank_field))
               |> cs.repo.all
     case results do
       [] -> nil
@@ -218,12 +195,12 @@ defmodule EctoRanked do
   end
 
   defp find_next_two(cs, options) do
-    rank = get_field(cs, :rank)
+    rank = get_field(cs, options.rank_field)
     results = finder(cs, options)
-              |> where([f], f.rank > ^rank)
-              |> order_by(asc: :rank)
+              |> where([f], field(f, ^options.rank_field) > ^rank)
+              |> order_by(asc: ^options.rank_field)
               |> limit(2)
-              |> select([f], f.rank)
+              |> select([f], field(f, ^options.rank_field))
               |> cs.repo.all
     case results do
       [] -> nil
