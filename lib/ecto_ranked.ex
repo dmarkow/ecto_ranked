@@ -11,6 +11,11 @@ defmodule EctoRanked do
   @doc """
   Updates the given changeset with the appropriate ranking, and updates/ranks
   the other items in the list as necessary.
+
+  ## Options
+  * `:rank` - the field to store the actual ranking in. Defaults to `:rank`
+  * `:position` - the field to use for positional changes. Defaults to `:position`
+  * `:scope` - the field to scope all ranking to. Defaults to `nil` (no scoping).
   """
   def set_rank(changeset, opts) do
      prepare_changes(changeset, fn cs ->
