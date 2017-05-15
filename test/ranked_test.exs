@@ -101,21 +101,62 @@ defmodule EctoRanked.RankedTest do
       assert ranked_ids() == [model3.id, model1.id, model2.id]
     end
 
-    test "moving an item up" do
+    test "moving an item to the first position" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 |> Model.changeset(%{position: "first"}) |> Repo.update!
+      assert ranked_ids() == [model3.id, model1.id, model2.id]
+    end
 
+    test "moving an item to the last position" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model1 |> Model.changeset(%{position: "last"}) |> Repo.update!
+      assert ranked_ids() == [model2.id, model3.id, model1.id]
+    end
+
+    test "moving an item up" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 |> Model.changeset(%{position: "up"}) |> Repo.update
+      assert ranked_ids() == [model1.id, model3.id, model2.id]
     end
 
     test "moving an item down" do
-
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model1 |> Model.changeset(%{position: "down"}) |> Repo.update
+      assert ranked_ids() == [model2.id, model1.id, model3.id]
     end
 
     test "moving an item up when it's already first" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model1 |> Model.changeset(%{position: "up"}) |> Repo.update
+      assert model1.rank == Repo.get(Model, model1.id).rank
+      assert ranked_ids() == [model1.id, model2.id, model3.id]
     end
 
     test "moving an item down when it's already last" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 |> Model.changeset(%{position: "down"}) |> Repo.update
+      assert model3.rank == Repo.get(Model, model3.id).rank
+      assert ranked_ids() == [model1.id, model2.id, model3.id]
     end
 
     test "moving an item :down with consecutive rankings" do
+      model1 = %Model{} |> Model.changeset(%{rank: @max - 2}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{rank: @max - 1}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{rank: @max}) |> Repo.insert!
+      model2 |> Model.changeset(%{position: "down"}) |> Repo.update
+      assert ranked_ids() == [model1.id, model3.id, model2.id]
     end
 
     test "moving an item to a specific position with no gaps in ranking" do
@@ -135,7 +176,7 @@ defmodule EctoRanked.RankedTest do
       end) |> Enum.reverse
 
       models = models ++ Enum.map(1..100, fn(item) ->
-        model = Model.changeset(%Model{}, %{title: "2_#{item}"}) |> Repo.insert!
+        Model.changeset(%Model{}, %{title: "2_#{item}"}) |> Repo.insert!
       end)
 
       assert ranked_ids() == Enum.map(models, &(&1.id))

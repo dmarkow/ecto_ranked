@@ -51,6 +51,16 @@ defmodule EctoRanked do
       "last" ->
         last = get_current_last(cs, options)
         rank_between(cs, last || @min, @max)
+      "up" ->
+        case find_prev_two(cs, options) do
+          nil -> cs
+          {min, max} -> rank_between(cs, min, max)
+        end
+      "down" ->
+        case find_next_two(cs, options) do
+          nil -> cs
+          {min, max} -> rank_between(cs, min, max)
+        end
       number when is_integer(number) ->
         {min, max} = find_neighbors(cs, options, number)
         rank_between(cs, min, max)
@@ -190,6 +200,36 @@ defmodule EctoRanked do
            |> limit(1)
            |> select([m], m.rank)
            |> cs.repo.one
+  end
+
+  defp find_prev_two(cs, options) do
+    rank = get_field(cs, :rank)
+    results = finder(cs, options)
+              |> where([f], f.rank < ^rank)
+              |> order_by(desc: :rank)
+              |> limit(2)
+              |> select([f], f.rank)
+              |> cs.repo.all
+    case results do
+      [] -> nil
+      [upper] -> {@min, upper}
+      [upper, lower] -> {lower, upper}
+    end
+  end
+
+  defp find_next_two(cs, options) do
+    rank = get_field(cs, :rank)
+    results = finder(cs, options)
+              |> where([f], f.rank > ^rank)
+              |> order_by(asc: :rank)
+              |> limit(2)
+              |> select([f], f.rank)
+              |> cs.repo.all
+    case results do
+      [] -> nil
+      [lower] -> {lower, @max}
+      [lower, upper] -> {lower, upper}
+    end
   end
 
   defp finder(cs, options) do

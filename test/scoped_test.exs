@@ -3,9 +3,6 @@ defmodule EctoRanked.ScopedTest do
   import Ecto.Query
   alias EctoRanked.Test.{Model, Repo}
 
-  @min -2147483648
-  @max 2147483647
-
   def ranked_ids(scope) do
     Model
     |> select([m], m.id)
@@ -33,7 +30,7 @@ defmodule EctoRanked.ScopedTest do
 
     test "inserting item with a correct appending position" do
       scope1_model1 = %Model{} |> Model.changeset(%{scope: 1}) |> Repo.insert!
-      scope2_model1 = %Model{} |> Model.changeset(%{scope: 2}) |> Repo.insert!
+      %Model{} |> Model.changeset(%{scope: 2}) |> Repo.insert!
       scope1_model2 = %Model{} |> Model.changeset(%{scope: 1, position: 2}) |> Repo.insert!
 
       assert ranked_ids(1) == [scope1_model1.id, scope1_model2.id]
@@ -70,7 +67,7 @@ defmodule EctoRanked.ScopedTest do
 
     test "moving between scopes without a specified position moves to the end of the new scope" do
       scope1_model1 = Model.changeset(%Model{scope: 1, title: "item #1"}, %{}) |> Repo.insert!
-      scope1_model2 = Model.changeset(%Model{scope: 1, title: "item #2"}, %{}) |> Repo.insert!
+      Model.changeset(%Model{scope: 1, title: "item #2"}, %{}) |> Repo.insert!
       scope2_model1 = Model.changeset(%Model{scope: 2, title: "item #1"}, %{}) |> Repo.insert!
       scope2_model2 = Model.changeset(%Model{scope: 2, title: "item #2"}, %{}) |> Repo.insert!
       scope1_model1 = scope1_model1 |> Model.changeset(%{scope: 2}) |> Repo.update!
@@ -79,7 +76,7 @@ defmodule EctoRanked.ScopedTest do
 
     test "treats a missing scope as its own scope" do
       scope1_model1 = Model.changeset(%Model{scope: 1, title: "item #1"}, %{}) |> Repo.insert!
-      scope1_model2 = Model.changeset(%Model{scope: 1, title: "item #2"}, %{}) |> Repo.insert!
+      Model.changeset(%Model{scope: 1, title: "item #2"}, %{}) |> Repo.insert!
       noscope_model1 = Model.changeset(%Model{title: "no scope"}, %{}) |> Repo.insert!
       assert Repo.get(Model, scope1_model1.id).rank == Repo.get(Model, noscope_model1.id).rank
     end
