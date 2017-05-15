@@ -3,8 +3,6 @@
 This package adds automatic ranking to your Ecto models. It's heavily based on
 the Rails [ranked-model](https://github.com/mixonic/ranked-model) gem.
 
-### NOTE: This package is in its early stages and is barely functional. It's hard coded to use `:rank` and `:position` fields and only supports passing numbers for `:position`.
-
 ## Installation
 
 The package can be installed by adding `ecto_ranked` to your list of dependencies in `mix.exs`:
@@ -42,8 +40,28 @@ defmodule MyApp.Item do
 end
 ```
 
+If you need to use field names other than `:rank` and `:position`, you can pass those as options to `set_rank`:
+
+```elixir
+defmodule MyApp.Item do
+  use MyApp.Web, :model
+  import EctoRanked
+
+  schema "items" do
+    field :my_ranking_field, :integer
+    field :my_position_field, :any, virtual: true
+  end
+
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:my_position_field])
+    |> set_rank(rank: :my_ranking_field, position: :my_position_field)
+  end
+end
+```
+
 If you'd like to scope your ranking to a certain field (e.g. an association, string field, etc.),
-just add it as an argument to `set_rank`:
+just add a `:scope` argument to `set_rank`:
 
 ```elixir
 defmodule MyApp.Item do
@@ -59,7 +77,7 @@ defmodule MyApp.Item do
   def changeset(struct, params \\ %{}) do
     struct
     |> cast(params, [:position])
-    |> set_rank(:parent_id)
+    |> set_rank(scope: :parent_id)
   end
 end
 ```
