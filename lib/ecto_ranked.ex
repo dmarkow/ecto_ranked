@@ -31,18 +31,18 @@ defmodule EctoRanked do
 
   defp update_index_from_position(cs, options, position) do
     case position do
-      "first" ->
+      pos when pos in ["first", :first] ->
         first = get_current_first(cs, options)
         rank_between(cs, options, @min, first || @max)
-      "last" ->
+      pos when pos in ["last", :last] ->
         last = get_current_last(cs, options)
         rank_between(cs, options, last || @min, @max)
-      "up" ->
+      pos when pos in ["up", :up] ->
         case find_prev_two(cs, options) do
           nil -> cs
           {min, max} -> rank_between(cs, options, min, max)
         end
-      "down" ->
+      pos when pos in ["down", :down] ->
         case find_next_two(cs, options) do
           nil -> cs
           {min, max} -> rank_between(cs, options, min, max)

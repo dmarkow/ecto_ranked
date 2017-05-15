@@ -108,6 +108,14 @@ defmodule EctoRanked.RankedTest do
       assert ranked_ids() == [model3.id, model1.id, model2.id]
     end
 
+    test "moving an item to the :first position" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
+      model3 |> Model.changeset(%{my_position: :first}) |> Repo.update!
+      assert ranked_ids() == [model3.id, model1.id, model2.id]
+    end
+
     test "moving an item to the last position" do
       model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
       model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
