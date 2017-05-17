@@ -1,4 +1,4 @@
-# EctoRanked
+revi# EctoRanked
 
 This package adds automatic ranking to your Ecto models. It's heavily based on
 the Rails [ranked-model](https://github.com/mixonic/ranked-model) gem.
@@ -80,6 +80,15 @@ defmodule MyApp.Item do
     |> set_rank(scope: :parent_id)
   end
 end
+```
+
+You can even have multiple rankings that sort independently of each other (e.g. a scoped one and a global one, or multiple global ones):
+
+```elixir
+struct
+|> cast(params, [:local_position, :global_position, :parent_id])
+|> set_rank(rank: :scoped_rank, position: :scoped_position, scope: :parent_id)
+|> set_rank(rank: :global_rank, position: :global_position)
 ```
 
 ## Documentation
