@@ -1,8 +1,8 @@
-defmodule EctoRanked.Test.Repo.Migrations.Model do
+defmodule EctoRanked.Test.Repo.Migrations.MultiModel do
   use Ecto.Migration
 
   def change do
-    create table(:models) do
+    create table(:multi_models) do
       add :title, :string
       add :my_rank, :integer
       add :scope, :integer
