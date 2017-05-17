@@ -57,7 +57,7 @@ defmodule EctoRanked do
         {min, max} = find_neighbors(cs, options, number)
         rank_between(cs, options, min, max)
       nil ->
-        if get_field(cs, options.rank_field) && (!options.scope_field || !get_change(cs, options.scope_field)) do
+        if get_field(cs, options.rank_field) && (get_change(cs, options.rank_field) || !options.scope_field || !get_change(cs, options.scope_field)) do
           cs
         else
           update_index_from_position(cs, options, "last")

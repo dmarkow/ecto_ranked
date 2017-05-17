@@ -65,6 +65,14 @@ defmodule EctoRanked.ScopedTest do
       assert ranked_ids(2) == [scope2_model1.id, scope1_model2.id, scope2_model2.id, scope2_model3.id]
     end
 
+    test "moving between scopes to a specific rank" do
+      scope1_model1 = Model.changeset(%Model{scope: 1, title: "item #1"}, %{}) |> Repo.insert!
+      scope2_model1 = Model.changeset(%Model{scope: 2, title: "item #1"}, %{}) |> Repo.insert!
+      scope2_model2 = Model.changeset(%Model{scope: 2, title: "item #2"}, %{}) |> Repo.insert!
+      scope1_model1 |> Model.changeset(%{my_rank: scope2_model2.my_rank, scope: 2}) |> Repo.update
+      assert ranked_ids(2) == [scope2_model1.id, scope1_model1.id, scope2_model2.id]
+    end
+
     test "moving between scopes without a specified position moves to the end of the new scope" do
       scope1_model1 = Model.changeset(%Model{scope: 1, title: "item #1"}, %{}) |> Repo.insert!
       Model.changeset(%Model{scope: 1, title: "item #2"}, %{}) |> Repo.insert!
