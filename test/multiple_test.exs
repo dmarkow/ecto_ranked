@@ -21,12 +21,13 @@ defmodule EctoRanked.MultipleTest do
     |> Repo.all
   end
 
-  test "multiple ranking columns on a model" do
+  test "maintain multiple ranking columns on a model" do
     model1 = %MultiModel{} |> MultiModel.changeset(%{scope: 1}) |> Repo.insert!
     model2 = %MultiModel{} |> MultiModel.changeset(%{scope: 1}) |> Repo.insert!
     model3 = %MultiModel{} |> MultiModel.changeset(%{scope: 1}) |> Repo.insert!
     model3 |> MultiModel.changeset(%{global_position: :first}) |> Repo.update!
     model2 |> MultiModel.changeset(%{my_position: :last}) |> Repo.update!
+
     assert ranked_ids(1) == [model1.id, model3.id, model2.id]
     assert ranked_ids() == [model3.id, model1.id, model2.id]
   end

@@ -1,4 +1,4 @@
-revi# EctoRanked
+# EctoRanked
 
 This package adds automatic ranking to your Ecto models. It's heavily based on
 the Rails [ranked-model](https://github.com/mixonic/ranked-model) gem.

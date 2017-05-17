@@ -1,6 +1,6 @@
 defmodule EctoRanked do
   @moduledoc """
-  EctoRanked uses a rank column to  provides changeset methods for updating ordering an ordering column
+  This module provides support for automatic ranking of your Ecto models.
   """
   import Ecto.Changeset
   import Ecto.Query
