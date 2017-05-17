@@ -3,7 +3,7 @@ defmodule EctoRanked.Test.MultiModel do
   import Ecto.Changeset
   import EctoRanked
 
-  schema "models" do
+  schema "multi_models" do
     field :title, :string
     field :my_rank, :integer
     field :scope, :integer

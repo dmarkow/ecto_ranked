@@ -82,6 +82,14 @@ defmodule MyApp.Item do
 end
 ```
 
+You can scope across multiple fields:
+
+```elixir
+struct
+|> cast(params, [:position, :parent_id, :category])
+|> set_rank(scope: [:parent_id, :category])
+```
+
 You can even have multiple rankings that sort independently of each other (e.g. a scoped one and a global one, or multiple global ones):
 
 ```elixir

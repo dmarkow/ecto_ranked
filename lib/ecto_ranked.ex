@@ -15,7 +15,7 @@ defmodule EctoRanked do
   ## Options
   * `:rank` - the field to store the actual ranking in. Defaults to `:rank`
   * `:position` - the field to use for positional changes. Defaults to `:position`
-  * `:scope` - the field to scope all ranking to. Defaults to `nil` (no scoping).
+  * `:scope` - the field(s) to scope all rankings to. Defaults to `nil` (no scoping).
   """
   @spec set_rank(Ecto.Changeset.t, Keyword.t) :: Ecto.Changeset.t
   def set_rank(changeset, opts \\ []) do
@@ -217,20 +217,29 @@ defmodule EctoRanked do
 
   defp finder(cs, options) do
     query = options.module
-
-    query = if options.scope_field do
-      scope = get_field(cs, options.scope_field)
-      if scope do
-        query |> where([q], field(q, ^options.scope_field) == ^scope)
-      else
-        query |> where([q], is_nil(field(q, ^options.scope_field)))
-      end
-    else
-      query
-    end
+            |> scope_query(cs, options.scope_field)
 
     if cs.data.id do
       query |> where([m], m.id != ^cs.data.id)
+    else
+      query
+    end
+  end
+
+  defp scope_query(query, cs, scope_field) when is_list(scope_field) do
+    Enum.reduce(scope_field, query, fn(field, acc) ->
+      scope_query(query, cs, field)
+    end)
+  end
+
+  defp scope_query(query, cs, scope_field) do
+    if scope_field do
+      scope = get_field(cs, scope_field)
+      if scope do
+        query |> where([q], field(q, ^scope_field) == ^scope)
+      else
+        query |> where([q], is_nil(field(q, ^scope_field)))
+      end
     else
       query
     end

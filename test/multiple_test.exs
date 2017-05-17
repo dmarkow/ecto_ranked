@@ -3,9 +3,6 @@ defmodule EctoRanked.MultipleTest do
   import Ecto.Query
   alias EctoRanked.Test.{MultiModel, Repo}
 
-  @min -2147483648
-  @max 2147483647
-
   def ranked_ids(scope) do
     MultiModel
     |> select([m], m.id)
