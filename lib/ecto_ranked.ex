@@ -238,7 +238,7 @@ defmodule EctoRanked do
 
   defp scope_query(query, cs, scope_field) when is_list(scope_field) do
     Enum.reduce(scope_field, query, fn(field, acc) ->
-      scope_query(query, cs, field)
+      scope_query(acc, cs, field)
     end)
   end
 
