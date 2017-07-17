@@ -57,13 +57,23 @@ defmodule EctoRanked do
         {min, max} = find_neighbors(cs, options, number)
         rank_between(cs, options, min, max)
       nil ->
-        if get_field(cs, options.rank_field) && (get_change(cs, options.rank_field) || !options.scope_field || !get_change(cs, options.scope_field)) do
+        if get_field(cs, options.rank_field) && (get_change(cs, options.rank_field) || !options.scope_field || !changes_to_scope_fields(cs, options.scope_field)) do
           cs
         else
           update_index_from_position(cs, options, "last")
         end
       _ -> raise ArgumentError, "invalid position"
     end
+  end
+
+  defp changes_to_scope_fields(cs, scope_field) when is_list(scope_field) do
+    Enum.any? scope_field, fn field ->
+      changes_to_scope_fields(cs, field)
+    end
+  end
+
+  defp changes_to_scope_fields(cs, scope_field) do
+    get_change(cs, scope_field)
   end
 
   defp rank_between(cs, options, min, max) do
