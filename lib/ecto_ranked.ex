@@ -228,8 +228,8 @@ defmodule EctoRanked do
   defp finder(cs, options) do
     query = options.module
             |> scope_query(cs, options.scope_field)
-
-    if cs.data.id do
+    
+    if Map.has_key(cs.data, :id) do
       query |> where([m], m.id != ^cs.data.id)
     else
       query
