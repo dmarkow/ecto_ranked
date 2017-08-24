@@ -229,7 +229,7 @@ defmodule EctoRanked do
     query = options.module
             |> scope_query(cs, options.scope_field)
     
-    if Map.has_key?(cs.data, :id) do
+    if Map.has_key?(cs.data, :id) && !is_nil(cs.data.id) do
       query |> where([m], m.id != ^cs.data.id)
     else
       query
