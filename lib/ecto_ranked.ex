@@ -16,6 +16,7 @@ defmodule EctoRanked do
   * `:rank` - the field to store the actual ranking in. Defaults to `:rank`
   * `:position` - the field to use for positional changes. Defaults to `:position`
   * `:scope` - the field(s) to scope all rankings to. Defaults to `nil` (no scoping).
+  * `:prefix` - the prefix to run all queries on (e.g. the schema path in Postgres). Defaults to `nil` (no prefix).
   """
   @spec set_rank(Ecto.Changeset.t, Keyword.t) :: Ecto.Changeset.t
   def set_rank(changeset, opts \\ []) do
@@ -25,7 +26,8 @@ defmodule EctoRanked do
           module: cs.data.__struct__,
           scope_field: Keyword.get(opts, :scope),
           position_field: Keyword.get(opts, :position, :position),
-          rank_field: Keyword.get(opts, :rank, :rank)
+          rank_field: Keyword.get(opts, :rank, :rank),
+          prefix: Keyword.get(opts, :prefix, nil)
         }
 
         cs
@@ -99,7 +101,7 @@ defmodule EctoRanked do
     finder(cs, options)
     |> where([f], field(f, ^options.rank_field) == ^rank)
     |> limit(1)
-    |> cs.repo.one
+    |> cs.repo.one(prefix: options.prefix)
   end
 
   defp rearrange_ranks(cs, options) do
@@ -110,17 +112,17 @@ defmodule EctoRanked do
       current_first && current_first > @min && rank == @max ->#decrement lteq rank
         finder(cs, options)
         |> where([m], field(m, ^options.rank_field) <= ^rank)
-        |> cs.repo.update_all([inc: [{options.rank_field, -1}]])
+        |> cs.repo.update_all([inc: [{options.rank_field, -1}]], prefix: options.prefix)
         cs
       current_last && current_last < @max - 1 && rank < current_last -> #increment gteq rank
         finder(cs, options)
         |> where([m], field(m, ^options.rank_field) >= ^rank)
-        |> cs.repo.update_all([inc: [{options.rank_field, 1}]])
+        |> cs.repo.update_all([inc: [{options.rank_field, 1}]], prefix: options.prefix)
         cs
       current_first && current_first > @min && rank > current_first -> #decrement ltrank
         finder(cs, options)
         |> where([m], field(m, ^options.rank_field) < ^rank)
-        |> cs.repo.update_all([inc: [{options.rank_field, -1}]])
+        |> cs.repo.update_all([inc: [{options.rank_field, -1}]], prefix: options.prefix)
         put_change(cs, options.rank_field, rank - 1)
       true -> rebalance_ranks(cs, options)
     end
@@ -129,7 +131,7 @@ defmodule EctoRanked do
   defp rebalance_ranks(cs, options) do
     items = finder(cs, options)
             |> order_by(asc: ^options.rank_field)
-            |> cs.repo.all
+            |> cs.repo.all(prefix: options.prefix)
     rank = get_field(cs, options.rank_field)
     rank_row(cs, options, items, 1, rank)
   end
@@ -149,7 +151,7 @@ defmodule EctoRanked do
       else
         current_index = if set_self, do: current_index - 1, else: current_index
         item = Enum.at(items, current_index)
-        change(item, [{options.rank_field, rank_value}]) |> cs.repo.update!
+        change(item, [{options.rank_field, rank_value}]) |> cs.repo.update!(prefix: options.prefix)
         rank_row(cs, options, items, index + 1, rank, set_self)
       end
     end
@@ -161,7 +163,7 @@ defmodule EctoRanked do
               |> limit(2)
               |> offset(^(position - 1))
               |> select([m], field(m, ^options.rank_field))
-              |> cs.repo.all
+              |> cs.repo.all(prefix: options.prefix)
 
     case results do
       [] -> {get_current_last(cs, options), @max}
@@ -184,7 +186,7 @@ defmodule EctoRanked do
     |> order_by(asc: ^options.rank_field)
     |> limit(1)
     |> select([m], field(m, ^options.rank_field))
-    |> cs.repo.one
+    |> cs.repo.one(prefix: options.prefix)
   end
 
   defp get_current_last(cs, options) do
@@ -192,7 +194,7 @@ defmodule EctoRanked do
     |> order_by(desc: ^options.rank_field)
     |> limit(1)
     |> select([m], field(m, ^options.rank_field))
-    |> cs.repo.one
+    |> cs.repo.one(prefix: options.prefix)
   end
 
   defp find_prev_two(cs, options) do
@@ -202,7 +204,7 @@ defmodule EctoRanked do
               |> order_by(desc: ^options.rank_field)
               |> limit(2)
               |> select([f], field(f, ^options.rank_field))
-              |> cs.repo.all
+              |> cs.repo.all(prefix: options.prefix)
     case results do
       [] -> nil
       [upper] -> {@min, upper}
@@ -217,7 +219,7 @@ defmodule EctoRanked do
               |> order_by(asc: ^options.rank_field)
               |> limit(2)
               |> select([f], field(f, ^options.rank_field))
-              |> cs.repo.all
+              |> cs.repo.all(prefix: options.prefix)
     case results do
       [] -> nil
       [lower] -> {lower, @max}
