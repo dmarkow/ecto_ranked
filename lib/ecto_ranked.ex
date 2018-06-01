@@ -168,6 +168,9 @@ defmodule EctoRanked do
     case results do
       [] -> {get_current_last(cs, options), @max}
       [lower] -> {lower, @max}
+      [nil, nil] ->
+        rebalance_ranks(cs, options)
+        find_neighbors(cs, options, position)
       [lower, upper] -> {lower, upper}
     end
   end
