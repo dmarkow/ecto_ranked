@@ -99,6 +99,23 @@ struct
 |> set_rank(rank: :global_rank, position: :global_position)
 ```
 
+Position is a write-only virtual attribute that's meant for placing an item at
+a specific rank. By default the `position` attribute  will be `nil` but you can
+calculate it on demand:
+
+```elixir
+def compute_positions(items \\ []) do
+  for {item, i} <- Enum.with_index(items) do
+    %{item | position: i}
+  end
+end
+
+Item
+|> order_by([:rank])
+|> Repo.all()
+|> Item.compute_positions()
+```
+
 ## Documentation
 
 Documentation can be found at [https://hexdocs.pm/ecto_ranked](https://hexdocs.pm/ecto_ranked).
