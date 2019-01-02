@@ -47,8 +47,8 @@ defmodule EctoRanked.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ecto, "~> 2.0"},
-     {:postgrex, "~> 0.13.2", only: :test},
+    [{:ecto_sql, "~> 3.0"},
+     {:postgrex, "~> 0.14", only: :test},
      {:ex_doc, "~> 0.14", only: :dev, runtime: false}]
   end
 end
