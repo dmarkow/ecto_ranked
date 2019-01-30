@@ -9,7 +9,7 @@ The package can be installed by adding `ecto_ranked` to your list of dependencie
 
 ```elixir
 def deps do
-  [{:ecto_ranked, "~> 0.1.0"}]
+  [{:ecto_ranked, "~> 0.4.0"}]
 end
 ```
 
