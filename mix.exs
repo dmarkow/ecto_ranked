@@ -3,7 +3,7 @@ defmodule EctoRanked.Mixfile do
 
   def project do
     [app: :ecto_ranked,
-     version: "0.4.0",
+     version: "0.4.1",
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -34,7 +34,7 @@ defmodule EctoRanked.Mixfile do
   defp elixirc_paths(_), do: ["lib"]
 
   defp aliases do
-    ["test": ["ecto.create --quiet", "ecto.migrate", "test"]]
+    [test: ["ecto.create --quiet", "ecto.migrate", "test"]]
   end
 
   # Dependencies can be Hex packages:
