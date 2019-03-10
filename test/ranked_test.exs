@@ -68,6 +68,12 @@ defmodule EctoRanked.RankedTest do
       assert model.my_rank == updated.my_rank
     end
 
+    test "moving an item when its the only one in its scope" do
+      model = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      updated = model |> Model.changeset(%{my_position: 1}) |> Repo.update!()
+      assert updated.my_rank == 0
+    end
+
     test "moving an item up to a specific position" do
       model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!
       model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!

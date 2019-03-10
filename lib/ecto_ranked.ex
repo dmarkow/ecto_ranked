@@ -198,6 +198,10 @@ defmodule EctoRanked do
     |> limit(1)
     |> select([m], field(m, ^options.rank_field))
     |> cs.repo.one(prefix: options.prefix)
+    |> case do
+      nil -> @min
+      min -> min
+    end
   end
 
   defp find_prev_two(cs, options) do
