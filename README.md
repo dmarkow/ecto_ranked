@@ -18,7 +18,7 @@ end
 To get started:
 
 - ```import EctoRanked```
-- Add a `:rank` integer field to your model
+- Add a `:rank` integer field to your model (NOTE: Setting a unique index on this column may cause issues depending on your database platform)
 - Call `set_rank()` in your changeset
 - Optionally, add a virtual `:position` field (with a type of `:any`) so you can move items in your list.
 
