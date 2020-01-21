@@ -41,27 +41,40 @@ defmodule EctoRanked do
     case position do
       pos when pos in ["first", :first] ->
         first = get_current_first(cs, options)
-        rank_between(cs, options, @min, first || @max)
+
+        if first do
+          rank_between(cs, options, pos, @min, first || @max)
+        else
+          update_index_from_position(cs, options, :middle)
+        end
+
+      pos when pos in ["middle", :middle] ->
+        rank_between(cs, options, pos, @min, @max)
 
       pos when pos in ["last", :last] ->
         last = get_current_last(cs, options)
-        rank_between(cs, options, last || @min, @max)
+
+        if last do
+          rank_between(cs, options, pos, last || @min, @max)
+        else
+          update_index_from_position(cs, options, :middle)
+        end
 
       pos when pos in ["up", :up] ->
         case find_prev_two(cs, options) do
           nil -> cs
-          {min, max} -> rank_between(cs, options, min, max)
+          {min, max} -> rank_between(cs, options, pos, min, max)
         end
 
       pos when pos in ["down", :down] ->
         case find_next_two(cs, options) do
           nil -> cs
-          {min, max} -> rank_between(cs, options, min, max)
+          {min, max} -> rank_between(cs, options, pos, min, max)
         end
 
       number when is_integer(number) ->
         {min, max} = find_neighbors(cs, options, number)
-        rank_between(cs, options, min, max)
+        rank_between(cs, options, number, min, max)
 
       nil ->
         if get_field(cs, options.rank_field) &&
@@ -87,9 +100,13 @@ defmodule EctoRanked do
     get_change(cs, scope_field)
   end
 
-  defp rank_between(cs, options, min, max) do
-    rank = EctoRanked.Utils.ceiling((max - min) / 2) + min
-    rank_at(cs, options, rank)
+  defp rank_between(cs, options, position, min, max) do
+    if max - min <= 1 do
+      cs |> rebalance_ranks(options) |> update_index_from_position(options, position)
+    else
+      rank = EctoRanked.Utils.ceiling((max - min) / 2) + min
+      rank_at(cs, options, rank)
+    end
   end
 
   defp rank_at(cs, options, rank) do

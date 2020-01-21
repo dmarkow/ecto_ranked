@@ -61,6 +61,29 @@ defmodule EctoRanked.RankedTest do
         Model.changeset(%Model{}, %{my_position: "wrong"}) |> Repo.insert!()
       end
     end
+
+    test "appending to list when @max is being used rebalances instead of shifting" do
+      for _i <- 1..31 do
+        %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      end
+
+      # Confirm the first 31 items perfectly spread between 0 and @max - 1
+      models = Model |> order_by(asc: :my_rank) |> Repo.all()
+      assert List.first(models).my_rank == 0
+      assert List.last(models).my_rank == @max - 1
+
+      # The 32nd item would leave no gap, so rebalance
+      %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      models = Model |> order_by(asc: :my_rank) |> Repo.all()
+      assert List.first(models).my_rank == -2_017_333_123
+      assert List.last(models).my_rank == 2_017_333_123
+
+      # Adding another item now fills the newly-created gap
+      %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      models = Model |> order_by(asc: :my_rank) |> Repo.all()
+      assert List.first(models).my_rank == -2_017_333_123
+      assert List.last(models).my_rank == 2_082_408_385
+    end
   end
 
   describe "updates" do
