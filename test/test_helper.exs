@@ -9,5 +9,5 @@ defmodule EctoRanked.TestCase do
   end
 end
 
-{:ok, _pid} = EctoRanked.Test.Repo.start_link
+{:ok, _pid} = EctoRanked.Test.Repo.start_link()
 Ecto.Adapters.SQL.Sandbox.mode(EctoRanked.Test.Repo, {:shared, self()})

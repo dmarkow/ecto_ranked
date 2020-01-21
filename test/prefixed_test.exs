@@ -4,8 +4,8 @@ defmodule EctoRanked.PrefixedTest do
   alias EctoRanked.Test.Repo
   alias EctoRanked.Test.PrefixedModel, as: Model
 
-  @min -2147483648
-  @max 2147483647
+  @min -2_147_483_648
+  @max 2_147_483_647
 
   def ranked_ids do
     Model
@@ -20,9 +20,11 @@ defmodule EctoRanked.PrefixedTest do
   describe "insertions" do
     test "an item inserted with no position is given a rank" do
       for i <- 1..10 do
-        model = %Model{}
-        |> Model.changeset(%{title: "item with no position, going to be ##{i}"})
-        |> insert
+        model =
+          %Model{}
+          |> Model.changeset(%{title: "item with no position, going to be ##{i}"})
+          |> insert
+
         refute is_nil(model.my_rank)
       end
 
@@ -188,15 +190,19 @@ defmodule EctoRanked.PrefixedTest do
 
   describe "rebalancing" do
     test "rebalancing lots of items stays in the proper order" do
-      models = Enum.map(1..100, fn(item) ->
-        Model.changeset(%Model{}, %{title: "1_#{101-item}", my_position: 0}) |> insert
-      end) |> Enum.reverse
+      models =
+        Enum.map(1..100, fn item ->
+          Model.changeset(%Model{}, %{title: "1_#{101 - item}", my_position: 0}) |> insert
+        end)
+        |> Enum.reverse()
 
-      models = models ++ Enum.map(1..100, fn(item) ->
-        Model.changeset(%Model{}, %{title: "2_#{item}"}) |> insert
-      end)
+      models =
+        models ++
+          Enum.map(1..100, fn item ->
+            Model.changeset(%Model{}, %{title: "2_#{item}"}) |> insert
+          end)
 
-      assert ranked_ids() == Enum.map(models, &(&1.id))
+      assert ranked_ids() == Enum.map(models, & &1.id)
     end
 
     test "rebalancing at a middle position shifts items >= down" do
