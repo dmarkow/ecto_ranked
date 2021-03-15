@@ -296,7 +296,7 @@ defmodule EctoRanked do
   defp finder(cs, options) do
     query =
       options
-      |> get_base_query()
+      |> base_query()
       |> scope_query(cs, options.scope_field)
 
     if cs.data.id do
@@ -306,11 +306,11 @@ defmodule EctoRanked do
     end
   end
 
-  defp get_base_query(%{base_queryable: base_queryable, module: module} = options)
+  defp base_query(%{base_queryable: base_queryable, module: module} = options)
        when not is_nil(base_queryable),
        do: apply(base_queryable, [module, options])
 
-  defp get_base_query(options), do: options.module
+  defp base_query(options), do: options.module
 
   defp scope_query(query, cs, scope_field) when is_list(scope_field) do
     Enum.reduce(scope_field, query, fn field, acc ->
