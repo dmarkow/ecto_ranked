@@ -20,7 +20,7 @@ To get started:
 - ```import EctoRanked```
 - Add a `:rank` integer field to your model (NOTE: Setting a unique index on this column may cause issues depending on your database platform)
 - Call `set_rank()` in your changeset
-- Optionally, add a virtual `:position` field (with a type of `:any`) so you can move items in your list.
+- Optionally, add a virtual `:position` field (with a type of `:any`) so you can move items in your list. `:position` accepts `:up`, `:down`, `:first`, `:last` or an integer, the integer being the desired position in a 0-based index.
 
 ```elixir
 defmodule MyApp.Item do
@@ -97,6 +97,20 @@ struct
 |> cast(params, [:local_position, :global_position, :parent_id])
 |> set_rank(rank: :scoped_rank, position: :scoped_position, scope: :parent_id)
 |> set_rank(rank: :global_rank, position: :global_position)
+```
+
+You can also pass a `:base_queryable` to scope more complex cases:
+
+```elixir
+def changeset(struct, params) do
+  struct
+  |> cast(params, [:position])
+  |> set_rank(base_queryable: &not_deleted_query/2)
+end
+
+def not_deleted_query(module, _options) do
+  from(items in module, where: not is_nil(items.deleted))
+end
 ```
 
 Position is a write-only virtual attribute that's meant for placing an item at

@@ -27,7 +27,8 @@ defmodule EctoRanked do
           scope_field: Keyword.get(opts, :scope),
           position_field: Keyword.get(opts, :position, :position),
           rank_field: Keyword.get(opts, :rank, :rank),
-          prefix: Keyword.get(opts, :prefix, nil)
+          prefix: Keyword.get(opts, :prefix, nil),
+          base_queryable: Keyword.get(opts, :base_queryable)
         }
 
         cs
@@ -294,7 +295,8 @@ defmodule EctoRanked do
 
   defp finder(cs, options) do
     query =
-      options.module
+      options
+      |> base_query()
       |> scope_query(cs, options.scope_field)
 
     if cs.data.id do
@@ -303,6 +305,12 @@ defmodule EctoRanked do
       query
     end
   end
+
+  defp base_query(%{base_queryable: base_queryable, module: module} = options)
+       when not is_nil(base_queryable),
+       do: apply(base_queryable, [module, options])
+
+  defp base_query(options), do: options.module
 
   defp scope_query(query, cs, scope_field) when is_list(scope_field) do
     Enum.reduce(scope_field, query, fn field, acc ->
