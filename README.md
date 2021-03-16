@@ -102,9 +102,12 @@ struct
 You can also pass a `:base_queryable` to scope more complex cases:
 
 ```elixir
+import Ecto.Query
+not_deleted_query = from(items in __MODULE__, where: not is_nil(items.deleted))
+
 struct
 |> cast(params, [:position])
-|> set_rank(base_queryable: Ecto.Query.where(queryable, [item], not is_nil(item.deleted)))
+|> set_rank(base_queryable: not_deleted_query)
 ```
 
 Position is a write-only virtual attribute that's meant for placing an item at
