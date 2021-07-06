@@ -1,7 +1,7 @@
 defmodule EctoRanked.ScopedTest do
   use EctoRanked.TestCase
   import Ecto.Query
-  alias EctoRanked.Test.{Model, Repo}
+  alias EctoRanked.Test.{Model, ScopeRequiredModel, Repo}
 
   def ranked_ids(scope) do
     Model
@@ -114,6 +114,25 @@ defmodule EctoRanked.ScopedTest do
 
       assert Repo.get(Model, scope1_model1.id).my_rank ==
                Repo.get(Model, noscope_model1.id).my_rank
+    end
+
+    test "scope_required prevents missing scopes" do
+      cs = Model.changeset(%Model{scope: 1, title: "item #1"}, %{})
+      assert cs.valid?
+      cs = Model.changeset(%Model{title: "no scope"}, %{})
+      assert cs.valid?
+      cs = ScopeRequiredModel.changeset(%ScopeRequiredModel{scope: 1, title: "item #1"}, %{})
+      assert cs.valid?
+      cs = ScopeRequiredModel.changeset(%ScopeRequiredModel{title: "no scope"}, %{})
+      refute cs.valid?
+    end
+
+    test "scope_required checks that the scope field is specified" do
+      cs =
+        ScopeRequiredModel.broken_changeset(%ScopeRequiredModel{scope: 1, title: "no scope"}, %{})
+
+      refute cs.valid?
+      assert cs.errors == [{:my_rank, {"does not specify the required scope field", []}}]
     end
   end
 end

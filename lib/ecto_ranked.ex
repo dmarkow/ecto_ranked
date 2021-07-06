@@ -20,13 +20,30 @@ defmodule EctoRanked do
   """
   @spec set_rank(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
   def set_rank(changeset, opts \\ []) do
+    scope_field = Keyword.get(opts, :scope)
+    rank_field = Keyword.get(opts, :rank, :rank)
+
+    changeset =
+      if opts[:scope_required] do
+        if scope_field do
+          validate_required(
+            changeset,
+            if(is_list(scope_field), do: scope_field, else: [scope_field])
+          )
+        else
+          add_error(changeset, rank_field, "does not specify the required scope field")
+        end
+      else
+        changeset
+      end
+
     prepare_changes(changeset, fn cs ->
       if cs.action in [:insert, :update] do
         options = %{
           module: cs.data.__struct__,
-          scope_field: Keyword.get(opts, :scope),
+          scope_field: scope_field,
           position_field: Keyword.get(opts, :position, :position),
-          rank_field: Keyword.get(opts, :rank, :rank),
+          rank_field: rank_field,
           prefix: Keyword.get(opts, :prefix, nil)
         }
 

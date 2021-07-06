@@ -54,7 +54,7 @@ defmodule EctoRanked.Mixfile do
     [
       {:ecto_sql, "~> 3.0"},
       {:postgrex, "~> 0.14", only: :test},
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.15", only: :dev, runtime: false}
     ]
   end
 end

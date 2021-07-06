@@ -90,6 +90,14 @@ struct
 |> set_rank(scope: [:parent_id, :category])
 ```
 
+Scopes are optional by default, meaning within a single table you might have some records scoped against a value, and some records not scoped at all (when the scoped value receives a `nil` value). Those unscoped records are treated as their own global scope. If you want to ensure a scope is always provided, you can use the `scope_required` option, which is effectively the same as adding your own `validate_required/3` call:
+
+```elixir
+struct
+|> cast(params, [:position, :parent_id, :category])
+|> set_rank(scope: :parent_id, scope_required: true)
+```
+
 You can even have multiple rankings that sort independently of each other (e.g. a scoped one and a global one, or multiple global ones):
 
 ```elixir
