@@ -1,15 +1,23 @@
 # EctoRanked
 
+[![Module Version](https://img.shields.io/hexpm/v/ecto_ranked.svg)](https://hex.pm/packages/ecto_ranked)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/ecto_ranked/)
+[![Total Download](https://img.shields.io/hexpm/dt/ecto_ranked.svg)](https://hex.pm/packages/ecto_ranked)
+[![License](https://img.shields.io/hexpm/l/ecto_ranked.svg)](https://github.com/dmarkow/ecto_ranked/blob/master/LICENSE.md)
+[![Last Updated](https://img.shields.io/github/last-commit/dmarkow/ecto_ranked.svg)](https://github.com/dmarkow/ecto_ranked/commits/master)
+
 This package adds automatic ranking to your Ecto models. It's heavily based on
 the Rails [ranked-model](https://github.com/mixonic/ranked-model) gem.
 
 ## Installation
 
-The package can be installed by adding `ecto_ranked` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `:ecto_ranked` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:ecto_ranked, "~> 0.4.0"}]
+  [
+    {:ecto_ranked, "~> 0.4.0"}
+  ]
 end
 ```
 
@@ -132,3 +140,10 @@ Documentation can be found at [https://hexdocs.pm/ecto_ranked](https://hexdocs.p
 
 - Everyone who contributed to [ranked-model](https://github.com/mixonic/ranked-model/graphs/contributors), of which this package is a rough clone.
 - [EctoOrdered](https://github.com/zovafit/ecto-ordered), which provided a great starting point.
+
+## Copyright and License
+
+Copyright (c) 2017 Dylan Markow
+
+This work is free. You can redistribute it and/or modify it under the
+terms of the MIT License. See the [LICENSE.md](./LICENSE.md) file for more details.

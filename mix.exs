@@ -1,18 +1,21 @@
 defmodule EctoRanked.Mixfile do
   use Mix.Project
 
+  @source_url "https://github.com/dmarkow/ecto_ranked"
+  @version "0.5.0"
+
   def project do
     [
       app: :ecto_ranked,
-      version: "0.5.0",
+      version: @version,
       elixir: "~> 1.4",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
-      docs: [main: "readme", extras: ["README.md"]],
       aliases: aliases(),
       package: package(),
-      deps: deps()
+      deps: deps(),
+      docs: docs()
     ]
   end
 
@@ -22,13 +25,10 @@ defmodule EctoRanked.Mixfile do
       files: ["lib", "mix.exs", "README*"],
       maintainers: ["Dylan Markow"],
       licenses: ["MIT"],
-      links: %{github: "https://github.com/dmarkow/ecto_ranked"}
+      links: %{GitHub: @source_url}
     ]
   end
 
-  # Configuration for the OTP application
-  #
-  # Type "mix help compile.app" for more information
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
     [extra_applications: [:logger]]
@@ -41,20 +41,25 @@ defmodule EctoRanked.Mixfile do
     [test: ["ecto.create --quiet", "ecto.migrate", "test"]]
   end
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:my_dep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:my_dep, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-  #
-  # Type "mix help deps" for more examples and options
   defp deps do
     [
       {:ecto_sql, "~> 3.0"},
       {:postgrex, "~> 0.14", only: :test},
-      {:ex_doc, "~> 0.15", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      extras: [
+        "CODE_OF_CONDUCT.md": [title: "Code of Conduct"],
+        "LICENSE.md": [title: "License"],
+        "README.md": [title: "Overview"]
+      ],
+      main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
+      formatters: ["html"]
     ]
   end
 end
