@@ -1,10 +1,10 @@
 defmodule EctoRanked.Utils do
   @moduledoc """
-  Provides utilities for EctoRanked
+  Provides utilities for `EctoRanked`.
   """
 
   @doc """
-  Returns the first integer greater or equal than the provided value
+  Returns the first integer greater or equal than the provided value.
 
   ## Examples
 

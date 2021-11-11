@@ -1,6 +1,6 @@
 defmodule EctoRanked do
   @moduledoc """
-  This module provides support for automatic ranking of your Ecto models.
+  This module provides support for automatic ranking of your `Ecto` models.
   """
   import Ecto.Changeset
   import Ecto.Query
@@ -13,6 +13,7 @@ defmodule EctoRanked do
   the other items in the list as necessary.
 
   ## Options
+
   * `:rank` - the field to store the actual ranking in. Defaults to `:rank`
   * `:position` - the field to use for positional changes. Defaults to `:position`
   * `:scope` - the field(s) to scope all rankings to. Defaults to `nil` (no scoping).
