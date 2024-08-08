@@ -55,6 +55,11 @@ defmodule EctoRanked do
   end
 
   defp update_index_from_position(cs, options, position) do
+    position =
+      if is_binary(position) && String.match?(position, ~r/^\d+$/),
+        do: String.to_integer(position),
+        else: position
+
     case position do
       pos when pos in ["first", :first] ->
         first = get_current_first(cs, options)

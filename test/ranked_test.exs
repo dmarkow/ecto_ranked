@@ -62,6 +62,14 @@ defmodule EctoRanked.RankedTest do
       end
     end
 
+    test "inserting at a string position" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      model4 = %Model{} |> Model.changeset(%{my_position: "1"}) |> Repo.insert!()
+      assert ranked_ids() == [model1.id, model4.id, model2.id, model3.id]
+    end
+
     test "appending to list when @max is being used rebalances instead of shifting" do
       for _i <- 1..31 do
         %Model{} |> Model.changeset(%{}) |> Repo.insert!()

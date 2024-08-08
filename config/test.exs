@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ecto_ranked, EctoRanked.Test.Repo,
   adapter: Ecto.Adapters.Postgres,
@@ -9,4 +9,4 @@ config :ecto_ranked, EctoRanked.Test.Repo,
 config :ecto_ranked,
   ecto_repos: [EctoRanked.Test.Repo]
 
-config :logger, level: :warn
+config :logger, level: :warning

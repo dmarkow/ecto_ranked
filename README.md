@@ -9,7 +9,7 @@ The package can be installed by adding `ecto_ranked` to your list of dependencie
 
 ```elixir
 def deps do
-  [{:ecto_ranked, "~> 0.4.0"}]
+  [{:ecto_ranked, "~> 0.6.0"}]
 end
 ```
 
@@ -17,7 +17,7 @@ end
 
 To get started:
 
-- ```import EctoRanked```
+- `import EctoRanked`
 - Add a `:rank` integer field to your model (NOTE: Setting a unique index on this column may cause issues depending on your database platform)
 - Call `set_rank()` in your changeset
 - Optionally, add a virtual `:position` field (with a type of `:any`) so you can move items in your list.
@@ -108,7 +108,7 @@ struct
 ```
 
 Position is a write-only virtual attribute that's meant for placing an item at
-a specific rank. By default the `position` attribute  will be `nil` but you can
+a specific rank. By default the `position` attribute will be `nil` but you can
 calculate it on demand:
 
 ```elixir
