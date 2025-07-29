@@ -215,6 +215,16 @@ defmodule EctoRanked.RankedTest do
     end
   end
 
+  describe "deletions" do
+    test "deleting an item via a changeset doesn't try to set ranks" do
+      model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      model2 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      model3 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()
+      model3 |> Model.changeset(%{}) |> Repo.delete!()
+      assert ranked_ids() == [model1.id, model2.id]
+    end
+  end
+
   describe "legacy records" do
     test "new record can be inserted" do
       model1 = %Model{} |> Model.changeset(%{}) |> Repo.insert!()

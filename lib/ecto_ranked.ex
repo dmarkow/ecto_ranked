@@ -50,6 +50,8 @@ defmodule EctoRanked do
         cs
         |> update_index_from_position(options, get_change(cs, options.position_field))
         |> assure_unique_position(options)
+      else
+        cs
       end
     end)
   end
